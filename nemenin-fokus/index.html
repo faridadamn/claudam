@@ -184,6 +184,19 @@
       <div class="desk-center" id="deskCenter">Meja<br>Fokus</div>
     </div>
 
+    <div class="card" id="videoCard">
+      <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>Video / Audio Bareng</span>
+        <button class="btn-ghost" id="toggleVideoBtn" style="padding:6px 12px; font-size:12.5px;">Gabung Video</button>
+      </div>
+      <div id="videoEmpty" style="color:var(--muted); font-size:13.5px; padding:10px 0;">
+        Belum gabung. Kalau nggak mau kelihatan, tinggal matiin kamera pas udah masuk — audio-only tetep bisa.
+      </div>
+      <div id="videoFrameWrap" style="display:none; border-radius:10px; overflow:hidden; border:1px solid var(--line);">
+        <iframe id="jitsiFrame" style="width:100%; height:360px; border:0;" allow="camera; microphone; fullscreen; display-capture; autoplay"></iframe>
+      </div>
+    </div>
+
     <div class="card timer-panel">
       <div class="timer-mode" id="timerMode">Sesi Fokus</div>
       <div class="timer-digits" id="timerDigits">25:00</div>
@@ -434,6 +447,42 @@ document.getElementById('resetBtn').onclick = async () => {
       .eq('room_id', currentRoom.id).eq('guest_id', guestId);
     refreshMembers();
   }
+};
+
+// ---------- Video/audio bareng (Jitsi Meet embed) ----------
+let videoJoined = false;
+document.getElementById('toggleVideoBtn').onclick = () => {
+  if (!currentRoom) return;
+  videoJoined = !videoJoined;
+  const frame = document.getElementById('jitsiFrame');
+  const wrap = document.getElementById('videoFrameWrap');
+  const empty = document.getElementById('videoEmpty');
+  const btn = document.getElementById('toggleVideoBtn');
+
+  if (videoJoined) {
+    // Prefix biar nama room unik & nggak gampang ditebak orang luar
+    const jitsiRoomName = 'nemeninfokus-' + currentRoom.code;
+    frame.src = `https://meet.jit.si/${jitsiRoomName}#userInfo.displayName="${encodeURIComponent(displayName)}"`;
+    wrap.style.display = 'block';
+    empty.style.display = 'none';
+    btn.textContent = 'Keluar Video';
+  } else {
+    frame.src = '';
+    wrap.style.display = 'none';
+    empty.style.display = 'block';
+    btn.textContent = 'Gabung Video';
+  }
+};
+
+// reset video state tiap keluar room
+const originalLeave = document.getElementById('leaveBtn').onclick;
+document.getElementById('leaveBtn').onclick = () => {
+  videoJoined = false;
+  document.getElementById('jitsiFrame').src = '';
+  document.getElementById('videoFrameWrap').style.display = 'none';
+  document.getElementById('videoEmpty').style.display = 'block';
+  document.getElementById('toggleVideoBtn').textContent = 'Gabung Video';
+  originalLeave();
 };
 
 // ---------- Task list ----------
